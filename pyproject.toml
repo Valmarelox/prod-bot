@@ -1,0 +1,21 @@
+[tool.poetry]
+name = "prodbot"
+version = "0.1.0"
+description = ""
+authors = ["Efi Weiss <efiwiss@gmail.com>"]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+mypy = "^1.10.0"
+pocket = "^0.3.6"
+python-weather = "^2.0.3"
+types-requests = "^2.32.0"
+
+[tool.poetry.dev-dependencies]
+
+[tool.mypy]
+ignore_missing_imports = true
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"

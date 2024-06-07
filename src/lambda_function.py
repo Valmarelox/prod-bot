@@ -1,5 +1,6 @@
 import os
 import json
+from typing import List
 import requests
 import datetime
 import asyncio
@@ -28,50 +29,69 @@ SUPPORTED_COMMANDS = (
     '/weather',
     )
 
+def is_event_scheduled(event) -> bool:
+    return event.get('detail-type', None) == 'Scheduled Event'
+
+class TelegramBot:
+    def __init__(self, token: str, chat_id: str):
+        self.token = token
+        self.chat_id = chat_id
+    
+    def send_message(self, msg: str):
+        res = requests.get(f"https://api.telegram.org/bot{self.token}/sendMessage", params={'chat_id': self.chat_id, 'text': msg})
+        if res.status_code != 200 or res.json()['ok'] != True:
+            raise RuntimeError(f"Got error from telegram: {res.content!r}")
+
+    def check_event_valid(self, event) -> bool:
+        if is_event_scheduled(event):
+            return True
+        if event['rawPath'] != '/telegram-pocket-bot':
+            return False
+        if event['headers'].get('x-telegram-bot-api-secret-token', '') !=  TELEGRAM_WEBHOOK_SECRET_TOKEN:
+            print("Invalid telegram request")
+            return False
+        return True
+        
+    def get_response_type(self, event) -> List[str]:
+        body = json.loads(event['body'])
+        if body['message']['text'] not in SUPPORTED_COMMANDS:
+            self.send_message(SUPPORTED_COMMANDS_RESPONSE.format(firstname=body['message']['from']['first_name']))
+            return []
+        return body['message']['text']
+
+    async def handle_bots(self, event):
+        bots = []
+        is_scheduled = is_event_scheduled(event)
+        if is_scheduled:
+            self.send_message("Here is your daily briefing:")
+            requests = SUPPORTED_COMMANDS
+        else: 
+            requests = [self.get_response_type(event)]
+        
+        if '/pocket' in requests:
+            bots.append(PocketBot(POCKET_STATS_CONSUMER_KEY, POCKET_STATS_ACCESS_TOKEN))
+        
+        if '/weather' in requests:
+            bots.append(WeatherBot(WEATHER_LOCATION))
+            
+        msgs = await asyncio.gather(*[bot.get_msg(is_scheduled) for bot in bots])
+        print(msgs)
+        for msg in msgs:
+            self.send_message(msg)
+
+
     
 def send_message(msg):
     res = requests.get(f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage", params={'chat_id': MANAGER_CHAT_ID, 'text': msg})
     if res.status_code != 200 or res.json()['ok'] != True:
         raise RuntimeError(f"Got error from telegram: {res.content}")
 
-def check_event_valid(event):
-    if event.get('detail-type', None) == 'Scheduled Event':
-        return True, None
-    if event['rawPath'] != '/telegram-pocket-bot':
-        return False, None
-    if event['headers'].get('x-telegram-bot-api-secret-token', '') !=  TELEGRAM_WEBHOOK_SECRET_TOKEN:
-        print("Invalid telegram request")
-        return False, None
-    body = json.loads(event['body'])
-    if body['message']['text'] not in SUPPORTED_COMMANDS:
-        return False, SUPPORTED_COMMANDS_RESPONSE.format(firstname=body['message']['from']['first_name'])
-    return True, body['message']['text']
-    
-async def handle_bots(request):
-    if not request:
-        send_message("Here is your daily briefing:")
-    
-    if request in ('/pocket', None):
-        bot = PocketBot(POCKET_STATS_CONSUMER_KEY, POCKET_STATS_ACCESS_TOKEN)
-        print("Sending pocket message")
-        send_message(bot.get_msg(scheduled=request is None))
-        print("Sent pocket message")
-    
-    if request in ('/weather', None):
-        bot = WeatherBot(WEATHER_LOCATION)
-        print("Sending weather message")
-        send_message(await bot.get_msg())
-        print("Sent weather message")
-    
-
 def lambda_handler(event, context):
     print('Starting handler', event, context)
-    valid, res_message = check_event_valid(event)
-    if not valid:
-        if res_message:
-            send_message(res_message)
+    bot = TelegramBot(token=BOT_TOKEN, chat_id=MANAGER_CHAT_ID)
+    if not bot.check_event_valid(event):
         return
     
-    asyncio.run(handle_bots(res_message))
+    asyncio.run(bot.handle_bots(event))
         
         

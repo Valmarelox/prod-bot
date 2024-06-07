@@ -1,7 +1,9 @@
 from python_weather import Client, METRIC
 
+from bot import SubBot
 
-class WeatherBot:
+
+class WeatherBot(SubBot):
     def __init__(self, location: str):
         self.location = location
         
@@ -14,7 +16,7 @@ class WeatherBot:
     def get_high_bound(self):
         return self.today_forecast.highest_temperature
     
-    async def get_msg(self):
+    async def get_msg(self, scheduled):
         print("Getting client")
         async with Client(unit=METRIC) as client:
             print("got client")
