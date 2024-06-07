@@ -79,13 +79,6 @@ class TelegramBot:
         for msg in msgs:
             self.send_message(msg)
 
-
-    
-def send_message(msg):
-    res = requests.get(f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage", params={'chat_id': MANAGER_CHAT_ID, 'text': msg})
-    if res.status_code != 200 or res.json()['ok'] != True:
-        raise RuntimeError(f"Got error from telegram: {res.content}")
-
 def lambda_handler(event, context):
     print('Starting handler', event, context)
     bot = TelegramBot(token=BOT_TOKEN, chat_id=MANAGER_CHAT_ID)
