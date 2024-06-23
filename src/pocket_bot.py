@@ -1,21 +1,26 @@
 from pocket import Pocket
 import random
-from enum import StrEnum, auto
+from enum import Enum
 
 from bot import SubBot
 
 
-class ContentType(StrEnum):
-    video = auto()
-    article = auto()
-    image = auto()
+class ContentType(Enum):
+    video = "video"
+    article = "article"
+    image = "image"
+
+class ItemState(Enum):
+    unread = "unread"
+    archive = "archive"
+    all = "all"
 
 class PocketBot(SubBot):
     def __init__(self, consumer_key, access_token):
         self._pocket = Pocket(consumer_key=consumer_key, access_token=access_token)
         
-    def get_message_of_type(self, state, content_type: ContentType):
-        res = self._pocket.retrieve(content_type, state=state)
+    def get_message_of_type(self, state: ItemState, content_type: ContentType):
+        res = self._pocket.retrieve(contentType=content_type.value, state=state.value)
         if res['complete'] != 1:
             raise RuntimeError("Encountered an error getting unread articles")
         articles = res['list']
@@ -25,17 +30,17 @@ class PocketBot(SubBot):
 
     
     def get_unread_msg(self):
-        num_articles, total_minutes, random_article = self.get_message_of_type('unread', ContentType.article)
+        num_articles, total_minutes, random_article = self.get_message_of_type(ItemState.unread, ContentType.article)
         return f"{num_articles} articles left which will take {total_minutes} minutes to finish reading.\n\tConsider reading: {random_article}"
     
     def get_read_msg(self):
-        num_articles, total_minutes, random_article = self.get_message_of_type('archive', content_type=ContentType.article)
+        num_articles, total_minutes, random_article = self.get_message_of_type(ItemState.archive, content_type=ContentType.article)
         return f"{num_articles} articles read which took {total_minutes} minutes.\n\tSomething you read: {random_article}"
 
     def get_video_times(self):
-        num_unread, total_unread, _ =  self.get_message_of_type('unread', ContentType.video)
-        num_archive, total_archive, _ = self.get_message_of_type('archive', ContentType.video)
-        return f"{num_unread} videos left which will take {total_unread} minutes to finish watching.\n{num_archive} videos watched which took {total_archive} minutes."
+        num_unread, total_unread, _ =  self.get_message_of_type(ItemState.unread, ContentType.video)
+        num_archive, total_archive, _ = self.get_message_of_type(ItemState.archive, ContentType.video)
+        return f"{num_unread} videos left which will take {total_unread} minutes to finish watching.\n\t{num_archive} videos watched which took {total_archive} minutes."
 
     
     async def get_msg(self, scheduled):

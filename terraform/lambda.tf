@@ -8,7 +8,7 @@ resource "aws_lambda_function" "telegrampocketbot" {
   memory_size   = 128
   timeout       = 30
   handler       = "lambda_function.lambda_handler"
-  runtime       = "python3.10"
+  runtime       = "python3.11"
   architectures = ["arm64"]
   ephemeral_storage {
     size = 512
