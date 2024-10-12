@@ -11,7 +11,7 @@ terraform {
   }
   backend "s3" {
     bucket = "tfremotestate-chatservice"
-    key    = "state"
+    key    = "state-prodbot"
     region = "us-east-1"
   }
 }
