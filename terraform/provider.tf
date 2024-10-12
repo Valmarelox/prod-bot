@@ -9,4 +9,9 @@ terraform {
       source  = "ldcorentin/klayer"
     }
   }
+  backend "s3" {
+    bucket = "tfremotestate-chatservice"
+    key    = "state"
+    region = "us-east-1"
+  }
 }

@@ -1,7 +1,8 @@
 
 resource "aws_cloudwatch_event_rule" "morning-daily" {
   name                = "morning-daily"
-  schedule_expression = "cron(30 3 * * ? *)"
+  schedule_expression = "cron(30 3 * * ? *)" // 3:30 UTC
+  description = "Daily morning trigger for the telegram bot"
 }
 
 resource "aws_cloudwatch_event_target" "lambda_target" {

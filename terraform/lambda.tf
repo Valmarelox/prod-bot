@@ -1,5 +1,6 @@
 
 resource "aws_lambda_function" "telegrampocketbot" {
+  depends_on = [ aws_cloudwatch_event_rule.morning-daily, aws_apigatewayv2_api.telegram-webhook ]
   filename         = "../release/telegram-pocket-bot.zip"
   source_code_hash = filebase64sha256("../release/telegram-pocket-bot.zip")
 
