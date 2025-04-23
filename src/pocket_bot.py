@@ -1,7 +1,7 @@
-from pocket import Pocket
+from pocket_api import PocketAPI
 import random
 from enum import Enum
-
+from functools import partial
 from bot import SubBot
 
 
@@ -15,17 +15,32 @@ class ItemState(Enum):
     archive = "archive"
     all = "all"
 
-class PocketBot(SubBot):
-    def __init__(self, consumer_key, access_token):
-        self._pocket = Pocket(consumer_key=consumer_key, access_token=access_token)
-        
-    def get_message_of_type(self, state: ItemState, content_type: ContentType):
-        res = self._pocket.retrieve(contentType=content_type.value, state=state.value)
+WORDS_PER_MINUTE=200
+
+def paginate_request(partial_request):
+    offset = 0
+    count = 30 # max count possible according to the API docs
+    total = None
+    items = {}
+    while total is None or offset < total:
+        res = partial_request(offset=offset, count=count)
         if res['complete'] != 1:
             raise RuntimeError("Encountered an error getting unread articles")
-        articles = res['list']
+        items.update(res['list'])
+        print(list(res.keys()))
+        total = int(res['total'])
+        offset += count
+    return items
+    
+
+class PocketBot(SubBot):
+    def __init__(self, consumer_key, access_token):
+        self._pocket = PocketAPI(consumer_key=consumer_key, access_token=access_token)
+        
+    def get_message_of_type(self, state: ItemState, content_type: ContentType):
+        articles = paginate_request(partial(self._pocket.get, contentType=content_type.value, state=state.value))
         random_article = articles[random.choice(list(articles.keys()))]
-        total_minutes = int(sum((article.get('time_to_read', int(article['word_count']) / 200) for article in articles.values())))
+        total_minutes = int(sum((article.get('time_to_read', int(article['word_count']) / WORDS_PER_MINUTE) for article in articles.values())))
         return len(articles), total_minutes, random_article['resolved_title']
 
     

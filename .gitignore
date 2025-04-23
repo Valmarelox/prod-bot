@@ -37,3 +37,5 @@ override.tf.json
 terraform.rc
 *.pyc
 release/
+local_secrets.tfvars
+.terraform_init

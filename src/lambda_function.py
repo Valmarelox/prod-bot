@@ -7,6 +7,7 @@ import asyncio
 import json
 from pocket_bot import PocketBot
 from weather_bot import WeatherBot
+import logging
 
 POCKET_STATS_CONSUMER_KEY = os.environ['POCKET_CONSUMER_ID']
 POCKET_STATS_ACCESS_TOKEN = os.environ['POCKET_ACCESS_TOKEN']

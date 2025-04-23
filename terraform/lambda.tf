@@ -27,7 +27,7 @@ resource "aws_lambda_function" "telegrampocketbot" {
 
   layers = [
     data.klayers_package_latest_version.requests.arn,
-    aws_lambda_layer_version.pocket-api.arn,
+    #aws_lambda_layer_version.pocket-api.arn,
     aws_lambda_layer_version.python-weather.arn
   ]
 
